@@ -10,7 +10,7 @@ void associate(char list[][2],int size,char request, char priority);
 void delete_requests(char list_1[][2],char list_2[][2],char list_3[][2],char list_4[][2],int size, char priority);
 void delete_requests_from_list(char list[] [2], int size, char priority);
 
-int sortIt(char word[][2], int left, int right);
+void sortIt(char word[][2], int left, int right);
 void quickSort(char word[][2], int length);
 int binarySearch(int a[][2], int s, int e, int f);
 
@@ -38,15 +38,15 @@ int main()
     list_2[0][0]='n';
     list_2[0][1]='n';
 
-    //printf("%c\n",list_1[1][0]);
+    printf("%c\n",list_1[1][0]);
     test = is_full(list_1,size);
     printf("%s\n", test ? "true" : "false");
 
 
     associate_request (size, list_1, list_2, list_3, list_4, 'a', 'p');
-    //printf("%c\n",list_2[1][0]);
-    //printf("%c\n",list_2[1][1]);
-    //printf("%c\n",list_1[0][1]);
+    printf("%c\n",list_2[1][0]);
+    printf("%c\n",list_2[1][1]);
+    printf("%c\n",list_1[0][1]);
 
 
 
@@ -58,7 +58,7 @@ void initialize_list (char list[][2],int size)  //use it to empty the list
     {
         list[i][0]='0';
         list[i][1]='0';
-        //printf("%c\n",list[i][0]);
+        printf("%c\n",list[i][0]);
     }
 }
 bool is_full (char array[][2], int size)
@@ -90,21 +90,21 @@ void associate_request (int size, char list_1[][2],char list_2[][2],char list_3[
     {
         if (!is_full(list_2,size))
         {
-            associate(*list_2,size,request,priority);
+            associate(list_2,size,request,priority);
             printf("Associated Successfully in List 2!\n");
         }
         else
         {
             if (!is_full(list_3,size))
             {
-                associate(*list_3,size,request,priority);
+                associate(list_3,size,request,priority);
                 printf("Associated Successfully in List 3!\n");
             }
             else
             {
                 if (!is_full(list_4,size))
                 {
-                    associate(*list_4,size,request,priority);
+                    associate(list_4,size,request,priority);
                     printf("Associated Successfully in List 4!\n");
                 }
                 else
@@ -170,9 +170,9 @@ void quickSort(char word[][2], int length){
 }
 
 
-int sortIt(char word[][2], int left, int right){
+void sortIt(char word[][2], int left, int right){
 
-    char *mid = word[(left+right)/2][2]; //point to the middle
+    char *mid = &word[(left+right)/2][2]; //point to the middle
     char temp[right+1];
     int i= left;
     int j = right;
@@ -180,20 +180,20 @@ int sortIt(char word[][2], int left, int right){
     while(i <= j){
 
         //word[i] is less than mid and i<right
-        while((strcmp(word[i][0], mid) < 0) && (i < right)){
+        while((strcmp(&word[i][0], mid) < 0) && (i < right)){
             i++;
         }
 
         //word[i] is greater than mid and j>left
-        while((strcmp(word[j][0],mid) > 0) && (j > left)){
+        while((strcmp(&word[j][0],mid) > 0) && (j > left)){
             j--;
         }
 
         //swap
         if(i <= j){
             strcpy(temp, word[i]);
-            strcpy(word[i][2], word[j][2]);
-            strcpy(word[j][2], temp);
+            strcpy(&word[i][2], &word[j][2]);
+            strcpy(&word[j][2], temp);
             i++;
             j--;
         }

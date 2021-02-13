@@ -1,208 +1,230 @@
 #include <stdio.h>
-#include <stdlib.h>
-#include <stdbool.h>
-#include <string.h>
 
-void initialize_list (char list[][2],int size);
-bool is_full (char array[][2], int size);
-void associate_request (int size, char list_1[][2],char list_2[][2],char list_3[][2],char list_4[][2],char request,char priority);
-void associate(char list[][2],int size,char request, char priority);
-void delete_requests(char list_1[][2],char list_2[][2],char list_3[][2],char list_4[][2],int size, char priority);
-void delete_requests_from_list(char list[] [2], int size, char priority);
+typedef struct
+{
+    int priority;
+    char data;
+} Request;
 
-void sortIt(char word[][2], int left, int right);
-void quickSort(char word[][2], int length);
-int binarySearch(int a[][2], int s, int e, int f);
+typedef struct
+{
+    Request requests[20];
+    int top;
+} List;
+
+int
+request_cmp(Request a, Request b)
+{
+    if (a.priority < b.priority)
+        return -1;
+
+    if (a.priority > b.priority)
+        return 1;
+
+    // if same priority we compare based on data
+    if (a.data < b.data)
+        return -1;
+
+    if (a.data == b.data)
+        return 0;
+
+    if (a.data > b.data)
+        return 1;
+}
+
+void
+list_insert(List* l, Request r)
+{
+    if (l->top == 20)
+        return;
+
+    l->requests[l->top] = r;
+    ++l->top;
+}
+
+void
+list_delete(List* l, int priority)
+{
+    int stride = 0;
+    int first_found = -1;
+    for (int i = 0; i < l->top; ++i)
+    {
+        if (l->requests[i].priority == priority)
+        {
+            if (first_found == -1)
+                first_found = i;
+            stride++;
+        }
+    }
+
+    // there is nothing to remove
+    if (first_found == -1)
+        return;
+
+    for (int i = first_found + stride; i < l->top; ++i)
+    {
+        l->requests[i - stride] = l->requests[i];
+    }
+
+    l->top -= stride;
+}
+
+void
+list_clear(List* l)
+{
+    l->top = 0;
+}
+
+int
+list_find(List* l, Request r, int begin, int end)
+{
+    if (begin == end)
+        return -1; // nothing found
+
+    int mid = begin + (end - begin) / 2;
+
+    int cmp = request_cmp(r, l->requests[mid]);
+    if (cmp == 0)
+    {
+        // request found
+        return mid;
+    }
+    else if (cmp == -1)
+    {
+        // search on the left side
+        return list_find(l, r, begin, mid);
+    }
+    else
+    {
+        // search on the right side
+        return list_find(l, r, mid + 1, end);
+    }
+}
+
+void
+list_process(List* l, int priority)
+{
+    for (int i = 0; i < l->top; ++i)
+    {
+        if (l->requests[i].priority == priority)
+        {
+            printf("%c ", l->requests[i].data);
+        }
+    }
+
+    printf("\n");
+}
+
+// sorting related functions
+
+// returns the index of the pivot
+void
+list_swap_requests(List* l, int i, int j)
+{
+    Request tmp = l->requests[i];
+    l->requests[i] = l->requests[j];
+    l->requests[j] = tmp;
+}
+
+int
+list_segment_partition(List* l, int begin, int end)
+{
+    Request pivot_request = l->requests[begin];
+
+    for (int i = begin + 1; i < end; ++i)
+    {
+        if (request_cmp(l->requests[i], pivot_request) == -1)
+            continue;
+
+        for (int j = i+1; j < end; ++j)
+        {
+            if (request_cmp(l->requests[j], pivot_request) == -1)
+            {
+                list_swap_requests(l, i, j);
+                break;
+            }
+        }
+    }
+
+    // put the pivot in the right position
+    int pivot = begin;
+    for (int i = begin + 1; i < end; ++i)
+    {
+        if (request_cmp(l->requests[i], pivot_request) != -1)
+            break;
+
+        list_swap_requests(l, pivot, i);
+        pivot = i;
+    }
+
+    return pivot;
+}
+
+void
+list_quick_sort(List* l, int begin, int end)
+{
+    if (end - begin < 2)
+        return;
+
+    int pivot = list_segment_partition(l, begin, end);
+    list_quick_sort(l, begin, pivot);
+    list_quick_sort(l, pivot + 1, end);
+}
 
 int main()
 {
-    int size = 3;
-    char list_1[size][2];
-    char list_2[size][2];
-    char list_3[size][2];
-    char list_4[size][2];
+    List lists[4] = {0};
 
-    initialize_list (list_1, size);
-    initialize_list (list_2, size);
-    initialize_list (list_3, size);
-    initialize_list (list_4, size);
+    Request r;
 
-    bool test;
+    r.data = 'c';
+    r.priority = 1;
+    list_insert(&lists[0], r);
 
-    list_1[0][0]='a';
-    list_1[0][1]='a';
-    list_1[1][0]='a';
-    list_1[1][1]='a';
-    list_1[2][0]='a';
-    list_1[2][1]='a';
-    list_2[0][0]='n';
-    list_2[0][1]='n';
+    r.data = 'i';
+    r.priority = 2;
+    list_insert(&lists[0], r);
 
-    printf("%c\n",list_1[1][0]);
-    test = is_full(list_1,size);
-    printf("%s\n", test ? "true" : "false");
+    r.data = 'j';
+    r.priority = 3;
+    list_insert(&lists[0], r);
 
+    r.data = 'g';
+    r.priority = 2;
+    list_insert(&lists[0], r);
 
-    associate_request (size, list_1, list_2, list_3, list_4, 'a', 'p');
-    printf("%c\n",list_2[1][0]);
-    printf("%c\n",list_2[1][1]);
-    printf("%c\n",list_1[0][1]);
+    r.data = 'p';
+    r.priority = 4;
+    list_insert(&lists[0], r);
 
+    r.data = 'f';
+    r.priority = 2;
+    list_insert(&lists[0], r);
 
-
-}
-
-void initialize_list (char list[][2],int size)  //use it to empty the list
-{
-    for (int i=0;i<size;i++)
-    {
-        list[i][0]='0';
-        list[i][1]='0';
-        printf("%c\n",list[i][0]);
-    }
-}
-bool is_full (char array[][2], int size)
-{
-    bool flag = false;
-    for (int i=0;i <size;i++)
-    {
-        if(array[i][0]== '0')
-        {
-            flag = false;
-            return flag;
-        }
-        else
-        {
-            flag = true;
-        }
-    }
-
-    return flag;
-}
-void associate_request (int size, char list_1[][2],char list_2[][2],char list_3[][2],char list_4[][2],char request,char priority)
-{
-    if (!is_full(list_1,size))
-    {
-        associate(list_1,size,request,priority);
-        printf("Associated Successfully in List 1!\n");
-    }
-    else
-    {
-        if (!is_full(list_2,size))
-        {
-            associate(list_2,size,request,priority);
-            printf("Associated Successfully in List 2!\n");
-        }
-        else
-        {
-            if (!is_full(list_3,size))
-            {
-                associate(list_3,size,request,priority);
-                printf("Associated Successfully in List 3!\n");
-            }
-            else
-            {
-                if (!is_full(list_4,size))
-                {
-                    associate(list_4,size,request,priority);
-                    printf("Associated Successfully in List 4!\n");
-                }
-                else
-                {
-                    printf("All Lists Are Full!");
-                }
-            }
-        }
-    }
-}
-
-void associate(char list[][2],int size,char request,char priority)
-{
-    for (int i=0;i<size;i++)
-    {
-        if (list[i][0]=='0')
-        {
-            list[i][0]=request;
-            list[i][1]=priority;
-            break;
-        }
-    }
-}
-
-void delete_requests(char list_1[][2],char list_2[][2],char list_3[][2],char list_4[][2],int size, char priority)
-{
-    delete_requests_from_list(list_1,size,priority);
-    delete_requests_from_list(list_2,size,priority);
-    delete_requests_from_list(list_3,size,priority);
-    delete_requests_from_list(list_4,size,priority);
-}
-
-void delete_requests_from_list(char list[] [2], int size, char priority)
-{
-    for(int i=0;i<size;i++)
-    {
-        if(list[i][1]==priority)
-        {
-            list[i][0]='0';
-            list[i][1]='0';
-        }
-    }
-}
-
-int binarySearch(int a[][2], int s, int e, int f) {
-    int m;
-
-    if (s > e) // Not found
-        return -1;
-
-    m = (s + e)/2;
-
-    if (a[m][0] == f)  // element found
-        return m;
-    else if (f > a[m][0])
-        return binarySearch(a, m+1, e, f);
-    else
-        return binarySearch(a, s, m-1, f);
-}
-
-void quickSort(char word[][2], int length){
-    sortIt(word, 0, length-1);
-}
+    r.data = 'z';
+    r.priority = 4;
+    list_insert(&lists[0], r);
 
 
-void sortIt(char word[][2], int left, int right){
+    r.data = 'a';
+    r.priority = 1;
+    list_insert(&lists[0], r);
 
-    char *mid = &word[(left+right)/2][2]; //point to the middle
-    char temp[right+1];
-    int i= left;
-    int j = right;
 
-    while(i <= j){
+    r.data = 'u';
+    r.priority = 4;
+    list_insert(&lists[0], r);
 
-        //word[i] is less than mid and i<right
-        while((strcmp(&word[i][0], mid) < 0) && (i < right)){
-            i++;
-        }
 
-        //word[i] is greater than mid and j>left
-        while((strcmp(&word[j][0],mid) > 0) && (j > left)){
-            j--;
-        }
+    list_quick_sort(&lists[0], 0, lists[0].top);
+    //list_process(&lists[0], 2);
+    for(int i = 0; i < lists[0].top; ++i)
+        printf("%d %c\n", lists[0].requests[i].priority, lists[0].requests[i].data);
+ /*   r.data = 'i';
+    list_sort(&lists[0]);
+    int index = list_find(&lists[0], r, 0, lists[0].top);*/
 
-        //swap
-        if(i <= j){
-            strcpy(temp, word[i]);
-            strcpy(&word[i][2], &word[j][2]);
-            strcpy(&word[j][2], temp);
-            i++;
-            j--;
-        }
-    }
+    // list_delete(&lists[0], 2);
 
-    if(left<j){
-        sortIt(word,left,j);
-    }
-    if(i<right){
-        sortIt(word, i,right);
-    }
+    return 0;
 }
